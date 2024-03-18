@@ -1,0 +1,157 @@
+Program.Sub.ScreenSU.Start
+Gui.F_Values..Create
+Gui.F_Values..Caption("Enter Parameter Values")
+Gui.F_Values..Size(7980,3795)
+Gui.F_Values..MinX(0)
+Gui.F_Values..MinY(0)
+Gui.F_Values..Position(0,0)
+Gui.F_Values..BackColor(-2147483633)
+Gui.F_Values..MousePointer(0)
+Gui.F_Values..Event(UnLoad,f_values_unload)
+Gui.F_Values.lbl2.Create(Label,"Select Location:",True,1935,255,0,2595,315,True,0,"Arial",10,-2147483633,0)
+Gui.F_Values.lbl2.FontStyle(True,False,False,False,False)
+Gui.F_Values.txtLoc.Create(TextBox,"",True,540,300,0,2835,600,True,0,"Arial",8,-2147483643,1)
+Gui.F_Values.cmdLoc.Create(Button)
+Gui.F_Values.cmdLoc.Size(480,375)
+Gui.F_Values.cmdLoc.Position(3480,570)
+Gui.F_Values.cmdLoc.Caption("^")
+Gui.F_Values.cmdLoc.Event(Click,cmdloc_click)
+Gui.F_Values.lbl1.Create(Label,"Select Part(s):",True,1935,255,0,2730,1395,True,0,"Arial",10,-2147483633,0)
+Gui.F_Values.txtPart1.Create(TextBox,"",True,2775,300,0,315,2010,True,0,"Arial",8,-2147483643,1)
+Gui.F_Values.txtPart1.Event(Change,txtPart1_Change)
+Gui.F_Values.lbl3.Create(Label,"Beginning",True,1935,255,0,360,1740,True,0,"Arial",10,-2147483633,0)
+Gui.F_Values.cmdPart1.Create(Button)
+Gui.F_Values.cmdPart1.Size(480,375)
+Gui.F_Values.cmdPart1.Position(3165,1935)
+Gui.F_Values.cmdPart1.Caption("^")
+Gui.F_Values.cmdPart1.Event(Click,cmdpart1_click)
+Gui.F_Values.lbl4.Create(Label,"Ending",True,1935,255,0,4350,1710,True,0,"Arial",10,-2147483633,0)
+Gui.F_Values.txtPart2.Create(TextBox,"",True,2775,300,0,4305,1980,True,0,"Arial",8,-2147483643,1)
+Gui.F_Values.cmdPart2.Create(Button)
+Gui.F_Values.cmdPart2.Size(480,375)
+Gui.F_Values.cmdPart2.Position(7155,1905)
+Gui.F_Values.cmdPart2.Caption("^")
+Gui.F_Values.cmdPart2.Event(Click,cmdpart2_click)
+Gui.F_Values.lbl5.Create(Label,"to",True,330,255,0,3840,2070,True,0,"Arial",10,-2147483633,0)
+Gui.F_Values.cmdOK.Create(Button)
+Gui.F_Values.cmdOK.Size(1005,375)
+Gui.F_Values.cmdOK.Position(3210,2610)
+Gui.F_Values.cmdOK.Caption("OK")
+Gui.F_Values.cmdOK.Event(Click,cmdok_click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+Gui.F_Values.cmdPart2.Enabled(False)
+Gui.F_Values..Show
+
+Program.Sub.Main.End
+
+Program.Sub.cmdok_click.Start
+V.Local.sRepName.Declare(String)
+V.Local.sRepName.Set("GAB_6125_BARCODE_PN_LOC.rpt")
+V.Local.sRep.Declare(String)
+V.Local.sName.Declare(String)
+V.Local.sValue.Declare(String)
+
+F.Global.BI.GetIDFromName(V.Local.sRepName,V.Local.sRep)
+F.Intrinsic.Control.If(V.Local.sRep,<,0)
+	F.Intrinsic.UI.Msgbox(V.Local.sRepName," No RptID for this report")
+F.Intrinsic.Control.Else
+	F.Intrinsic.String.Split("Part1*!*Part2*!*Loc","*!*",Variable.local.sName)
+	F.Intrinsic.String.Concat(V.Screen.F_Values!txtPart1.Text,"*!*",V.Screen.F_Values!txtPart2.Text,"*!*",V.Screen.F_Values!txtLoc.Text,V.Local.sValue)
+	F.Intrinsic.String.Split(V.Local.sValue,"*!*",V.Local.sValue)
+	F.Global.BI.PrintReport(V.Local.sRep,16,V.Local.sName,V.local.sValue,"GSView",False)
+'	F.Intrinsic.Control.End
+
+F.Intrinsic.Control.EndIf
+
+Program.Sub.cmdok_click.End
+
+Program.Sub.f_values_unload.Start
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+Program.Sub.f_values_unload.End
+
+Program.Sub.cmdpart1_click.Start
+V.Local.sTitles.Declare(String)
+V.Local.iWidths.Declare(Long)
+V.Local.sRet.Declare(String)
+V.Local.sDSN.Declare(String)
+V.Local.sSQL.Declare(String)
+
+F.Intrinsic.String.Split("Part*!*Location*!*Description*!*Product Line","*!*",V.Local.sTitles)
+F.Intrinsic.String.Split("2000*!*750*!*3500*!*750","*!*",V.Local.iWidths)
+
+F.Intrinsic.String.Concat("Select Part, Location, Description, Product_Line from V_INVENTORY_MSTR where location ='",V.Screen.F_Values!txtLoc.Text,"' order by Part",V.Local.sSQL)
+
+F.Intrinsic.UI.SetBrowserHotTypeAhead(True)
+
+F.Intrinsic.UI.SetBrowserOOT(True)
+F.Intrinsic.UI.Browser("Select a part","con",V.Local.sSQL,V.Local.sTitles,V.Local.iWidths,V.Local.sRet)
+
+F.Intrinsic.Control.If(V.Local.sret,<>,"***CANCEL***")
+	F.Intrinsic.String.Split(V.Local.sret,"*!*",V.Local.sret)
+	gui.F_Values.txtPart1.Text(V.Local.sRet(0))
+	gui.F_Values.txtPart2.Text(V.Local.sRet(0))
+F.Intrinsic.Control.EndIf
+
+Program.Sub.cmdpart1_click.End
+
+Program.Sub.cmdpart2_click.Start
+V.Local.sTitles.Declare(String)
+V.Local.iWidths.Declare(Long)
+V.Local.sRet.Declare(String)
+V.Local.sDSN.Declare(String)
+V.Local.sSQL.Declare(String)
+
+F.Intrinsic.String.Split("Part*!*Location*!*Description*!*Product Line","*!*",V.Local.sTitles)
+F.Intrinsic.String.Split("2000*!*750*!*3500*!*750","*!*",V.Local.iWidths)
+
+F.Intrinsic.String.Concat("Select Part, Location, Description, Product_Line from V_INVENTORY_MSTR where location ='",V.Screen.F_Values!txtLoc.Text,"' and Part >= '",V.Screen.F_Values!txtPart1.Text,"' order by Part",V.Local.sSQL)
+
+F.Intrinsic.UI.SetBrowserHotTypeAhead(True)
+
+F.Intrinsic.UI.SetBrowserOOT(True)
+F.Intrinsic.UI.Browser("Select a part","con",V.Local.sSQL,V.Local.sTitles,V.Local.iWidths,V.Local.sRet)
+
+F.Intrinsic.Control.If(V.Local.sret,<>,"***CANCEL***")
+	F.Intrinsic.String.Split(V.Local.sret,"*!*",V.Local.sret)
+	gui.F_Values.txtPart2.Text(V.Local.sRet(0))
+F.Intrinsic.Control.EndIf
+
+Program.Sub.cmdpart2_click.End
+
+Program.Sub.cmdloc_click.Start
+V.Local.sTitles.Declare(String)
+V.Local.iWidths.Declare(Long)
+V.Local.sRet.Declare(String)
+V.Local.sDSN.Declare(String)
+
+F.Intrinsic.String.Split("Location*!*Description","*!*",V.Local.sTitles)
+F.Intrinsic.String.Split("1300*!*2300","*!*",V.Local.iWidths)
+
+F.Intrinsic.UI.MiniBrowser("Select a Location",con,"Select Location,Location_desc FROM V_LOCATIONS ORDER BY Location",V.Local.sTitles,V.Local.iWidths,V.Local.sRet)
+
+F.Intrinsic.Control.If(V.Local.sret,<>,"***CANCEL***")
+	F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+	Gui.F_Values.txtLoc.Text(V.Local.sRet(0))
+F.Intrinsic.Control.EndIf
+
+Program.Sub.cmdloc_click.End
+
+Program.Sub.txtPart1_Change.Start
+F.Intrinsic.Control.If(V.Screen.F_Values!txtPart1.Text,<>,"")
+	Gui.F_Values.cmdPart2.Enabled(True)
+F.Intrinsic.Control.EndIf
+
+Program.Sub.txtPart1_Change.End
+
+Program.Sub.Comments.Start
+${$0$}$GAB_PO_ManRcpLbl$}$RRODRIGUEZ$}$9/10/2013$}$False
+Program.Sub.Comments.End
+
